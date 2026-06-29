@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Sophisticated Old Gold / Bronze Gradient -->
+    <linearGradient id="oldGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4AF37" />
+      <stop offset="50%" stop-color="#C5A059" />
+      <stop offset="100%" stop-color="#8C6B39" />
+    </linearGradient>
+    
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Agenda / Calendar Icon Symbol (Sophisticated Style) -->
+  <g transform="translate(64, 64)" filter="url(#softGlow)">
+    <!-- Calendar Body -->
+    <rect x="40" y="80" width="304" height="280" rx="40" fill="none" stroke="url(#oldGoldGrad)" stroke-width="24" />
+    
+    <!-- Top Rings / Binding -->
+    <path d="M120 40 L120 120 M264 40 L264 120" stroke="url(#oldGoldGrad)" stroke-width="24" stroke-linecap="round" />
+    
+    <!-- Horizontal Line (Header) -->
+    <path d="M40 180 L344 180" stroke="url(#oldGoldGrad)" stroke-width="24" />
+    
+    <!-- Checkmark / Sparkle inside to denote "Success/Management" -->
+    <path d="M140 260 L180 300 L260 220" fill="none" stroke="url(#oldGoldGrad)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

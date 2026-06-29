@@ -1,0 +1,8 @@
+{
+  "name": "Queen Agenda",
+  "description": "Sistema SaaS multiusuário de agendamento profissional para barbearias e estética, com gestão de planos e painel master.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
