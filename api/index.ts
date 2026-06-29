@@ -733,16 +733,17 @@ async function resolveShopId(supabaseClient: any, idOrSlug: string | undefined):
   }
 
   try {
-    const { data: company, error: compErr } = await supabaseClient
-      .from('companies')
+    const { data: shop, error } = await supabaseClient
+      .from('barbershops')
       .select('id')
       .eq('slug', idOrSlug)
       .maybeSingle();
     
-    if (company && company.id && !compErr) {
-      return company.id;
+    if (shop && shop.id && !error) {
+      return shop.id;
     }
 
+    // Fallback: search by name-based slug if column is missing or not matched
     const { data: allShops } = await supabaseClient.from('barbershops').select('id, name');
     if (allShops) {
       const match = allShops.find((s: any) => {
