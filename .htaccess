@@ -1,0 +1,11 @@
+# ConfiguraÃ§Ã£o para Node.js na HostGator
+DirectoryIndex disabled
+RewriteEngine On
+
+# Evita que o Apache tente listar arquivos e dê erro 403
+Options -Indexes
+
+# Encaminha todas as requisiÃ§Ãµes para o seu app.js (através do Passenger)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ app.js/$1 [QSA,L]

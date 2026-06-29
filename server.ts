@@ -102,7 +102,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`[SERVER] KIVO BARBER rodando com sucesso na porta ${PORT}`);
   });
 }
 
