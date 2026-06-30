@@ -652,6 +652,7 @@ export default function App() {
   const [clientPlanLoading, setClientPlanLoading] = useState(false);
 
   const [shopClientPage, setShopClientPage] = useState(1);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
   // --- ESTADOS DO PAINEL EXTRAS (BLOQUEIOS E LIMITES) ---
   const [lookaheadDays, setLookaheadDays] = useState<string>("15");
@@ -3114,12 +3115,20 @@ export default function App() {
                                       : 'bg-white border-black/5 hover:border-[#ffb77d]/50 shadow-sm'
                                 }`}
                               >
-                                <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-white/10 shadow-lg bg-[#1a1a1a]">
+                                <div 
+                                  className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-white/10 shadow-lg bg-[#1a1a1a] cursor-zoom-in"
+                                  onClick={(e) => {
+                                    if (prof.photo_url) {
+                                      e.stopPropagation();
+                                      setZoomedImage(prof.photo_url);
+                                    }
+                                  }}
+                                >
                                   {prof.photo_url ? (
                                     <img 
                                       src={prof.photo_url} 
                                       alt={prof.name} 
-                                      className="w-full h-full object-cover" 
+                                      className="w-full h-full object-cover transition-transform hover:scale-110" 
                                       referrerPolicy="no-referrer"
                                     />
                                   ) : (
@@ -3130,7 +3139,7 @@ export default function App() {
                                 </div>
                                 <div className="flex-1">
                                   <h4 className="font-bold text-sm uppercase tracking-wide">{prof.name}</h4>
-                                  <p className="text-[9px] opacity-40 font-bold mt-0.5 uppercase tracking-widest">Profissional Especialista</p>
+                                  <p className="text-[9px] opacity-40 font-bold mt-0.5 uppercase tracking-widest">Profissional</p>
                                 </div>
                                 <div className="text-right shrink-0">
                                   <div className="w-8 h-8 rounded-full bg-[#C5A059]/10 flex items-center justify-center text-[#C5A059]">
@@ -3180,9 +3189,16 @@ export default function App() {
                       <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 animate-fadeIn ${
                         theme === 'dark' ? 'bg-[#1a1a1a] border-white/5' : 'bg-[#fffcf9] border-[#C5A059]/10'
                       }`}>
-                         <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-[#C5A059] shadow-lg bg-[#111] shrink-0">
+                         <div 
+                            className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-[#C5A059] shadow-lg bg-[#111] shrink-0 cursor-zoom-in"
+                            onClick={() => {
+                              if (portalSelectedProfessional?.photo_url) {
+                                setZoomedImage(portalSelectedProfessional.photo_url);
+                              }
+                            }}
+                          >
                             {portalSelectedProfessional?.photo_url ? (
-                              <img src={portalSelectedProfessional.photo_url} className="w-full h-full object-cover" />
+                              <img src={portalSelectedProfessional.photo_url} className="w-full h-full object-cover transition-transform hover:scale-110" />
                             ) : (
                               <div className={`w-full h-full flex items-center justify-center font-black text-xl uppercase ${getProfessionalColorStyles(portalSelectedProfessional?.id || '', clientPortalProfessionals, theme)}`}>
                                 {portalSelectedProfessional?.name.slice(0, 1).toUpperCase()}
@@ -9371,6 +9387,33 @@ export default function App() {
                   </div>
                 </form>
               )}
+            </motion.div>
+          </div>
+        )}
+
+        {zoomedImage && (
+          <div 
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fadeIn"
+            onClick={() => setZoomedImage(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="relative max-w-4xl w-full flex items-center justify-center"
+              onClick={e => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => setZoomedImage(null)}
+                className="absolute -top-12 right-0 text-white/60 hover:text-white transition-colors flex items-center gap-2 font-bold uppercase tracking-widest text-[10px]"
+              >
+                Fechar <X size={20} />
+              </button>
+              <img 
+                src={zoomedImage} 
+                className="max-w-full max-h-[80vh] rounded-3xl shadow-2xl border border-white/10"
+                alt="Zoom"
+              />
             </motion.div>
           </div>
         )}
