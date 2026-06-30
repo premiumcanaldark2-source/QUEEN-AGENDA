@@ -3116,7 +3116,7 @@ export default function App() {
                                 }`}
                               >
                                 <div 
-                                  className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-white/10 shadow-lg bg-[#1a1a1a] cursor-zoom-in"
+                                  className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-white/10 shadow-lg bg-[#1a1a1a] cursor-zoom-in group relative"
                                   onClick={(e) => {
                                     if (prof.photo_url) {
                                       e.stopPropagation();
@@ -3125,12 +3125,17 @@ export default function App() {
                                   }}
                                 >
                                   {prof.photo_url ? (
-                                    <img 
-                                      src={prof.photo_url} 
-                                      alt={prof.name} 
-                                      className="w-full h-full object-cover transition-transform hover:scale-110" 
-                                      referrerPolicy="no-referrer"
-                                    />
+                                    <>
+                                      <img 
+                                        src={prof.photo_url} 
+                                        alt={prof.name} 
+                                        className="w-full h-full object-cover transition-transform group-hover:scale-110" 
+                                        referrerPolicy="no-referrer"
+                                      />
+                                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <Eye size={20} className="text-white" />
+                                      </div>
+                                    </>
                                   ) : (
                                     <div className={`w-full h-full flex items-center justify-center font-black text-lg uppercase ${colorClass}`}>
                                       {prof.name.slice(0, 1).toUpperCase()}
@@ -3190,7 +3195,7 @@ export default function App() {
                         theme === 'dark' ? 'bg-[#1a1a1a] border-white/5' : 'bg-[#fffcf9] border-[#C5A059]/10'
                       }`}>
                          <div 
-                            className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-[#C5A059] shadow-lg bg-[#111] shrink-0 cursor-zoom-in"
+                            className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-[#C5A059] shadow-lg bg-[#111] shrink-0 cursor-zoom-in group relative"
                             onClick={() => {
                               if (portalSelectedProfessional?.photo_url) {
                                 setZoomedImage(portalSelectedProfessional.photo_url);
@@ -3198,7 +3203,12 @@ export default function App() {
                             }}
                           >
                             {portalSelectedProfessional?.photo_url ? (
-                              <img src={portalSelectedProfessional.photo_url} className="w-full h-full object-cover transition-transform hover:scale-110" />
+                              <>
+                                <img src={portalSelectedProfessional.photo_url} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <Eye size={16} className="text-white" />
+                                </div>
+                              </>
                             ) : (
                               <div className={`w-full h-full flex items-center justify-center font-black text-xl uppercase ${getProfessionalColorStyles(portalSelectedProfessional?.id || '', clientPortalProfessionals, theme)}`}>
                                 {portalSelectedProfessional?.name.slice(0, 1).toUpperCase()}
