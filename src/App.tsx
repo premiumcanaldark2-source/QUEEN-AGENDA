@@ -61,21 +61,6 @@ interface AuthUser {
   shop?: Barbershop;
 }
 
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/\-/g, '+')
-    .replace(/_/g, '/');
-
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
 const PortalCarousel = ({ photos }: { photos: string[] }) => {
   const [currentIdx, setCurrentIdx] = useState(0);
 
@@ -502,8 +487,6 @@ export default function App() {
     photo2: '',
     photo3: '',
     whatsapp: '',
-    reminder_lead_time_minutes: 60,
-    slug: '',
   });
   const [settingsHours, setSettingsHours] = useState<OperatingHours>(defaultOperatingHours);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
@@ -644,7 +627,6 @@ export default function App() {
   const [portalPhone, setPortalPhone] = useState<string>('');
   const [portalPassword, setPortalPassword] = useState<string>('');
   const [portalName, setPortalName] = useState<string>('');
-  const [portalNotificationsEnabled, setPortalNotificationsEnabled] = useState<boolean>(true);
   const [portalFormType, setPortalFormType] = useState<'login' | 'register'>('register');
   const [portalAuthError, setPortalAuthError] = useState<string | null>(null);
   const [portalAuthLoading, setPortalAuthLoading] = useState<boolean>(false);
@@ -697,57 +679,7 @@ export default function App() {
   }, [clientPortalAppointments]);
 
   const playNotificationSound = (type: 'new' | 'cancel') => {
-    try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) return;
-      const ctx = new AudioContextClass();
-      
-      if (type === 'new') {
-        const osc1 = ctx.createOscillator();
-        const osc2 = ctx.createOscillator();
-        const gain = ctx.createGain();
-        
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(880, ctx.currentTime);
-        osc1.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.2);
-        
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(1046.5, ctx.currentTime);
-        osc2.frequency.exponentialRampToValueAtTime(1568, ctx.currentTime + 0.2);
-        
-        // Louder chime (0.5 structure instead of 0.15)
-        gain.gain.setValueAtTime(0.5, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-        
-        osc1.connect(gain);
-        osc2.connect(gain);
-        gain.connect(ctx.destination);
-        
-        osc1.start();
-        osc2.start();
-        osc1.stop(ctx.currentTime + 0.45);
-        osc2.stop(ctx.currentTime + 0.45);
-      } else {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-        osc.frequency.setValueAtTime(440, ctx.currentTime + 0.15);
-        
-        // Louder alert (0.5 structure instead of 0.15)
-        gain.gain.setValueAtTime(0.5, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-        
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        
-        osc.start();
-        osc.stop(ctx.currentTime + 0.45);
-      }
-    } catch (err) {
-      console.warn("Não foi possível reproduzir som de notificação:", err);
-    }
+    // Desativado conforme solicitado
   };
 
   // Sincronizar dados da barbearia para o formulário de configurações ao carregar quando entra na tela
@@ -765,8 +697,6 @@ export default function App() {
         photo1: user.shop.photo1 || parsed.photo1 || '',
         photo2: user.shop.photo2 || parsed.photo2 || '',
         photo3: user.shop.photo3 || parsed.photo3 || '',
-        reminder_lead_time_minutes: user.shop.reminder_lead_time_minutes || 60,
-        slug: user.shop.slug || '',
       });
       setSettingsHours(parsed.hours);
     }
@@ -903,8 +833,6 @@ export default function App() {
         photo1: settingsForm.photo1,
         photo2: settingsForm.photo2,
         photo3: settingsForm.photo3,
-        reminder_lead_time_minutes: settingsForm.reminder_lead_time_minutes,
-        slug: settingsForm.slug,
       };
 
       const res = await fetch(`/api/barbershops/${user.shopId}`, {
@@ -1539,61 +1467,6 @@ export default function App() {
     }
   };
 
-  const handleEnableNotifications = async () => {
-    if (!clientPortalUser) return;
-
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        alert("Para receber lembretes, você precisa permitir as notificações no seu navegador.");
-        return;
-      }
-
-      // Register SW if not already (just in case)
-      if ('serviceWorker' in navigator) {
-        await navigator.serviceWorker.register('/sw.js');
-      }
-
-      const sw = await navigator.serviceWorker.ready;
-      
-      const vapidRes = await fetch('/api/notifications/vapid-key');
-      const { publicKey } = await vapidRes.json();
-      
-      if (!publicKey) {
-        alert("O sistema de notificações ainda não foi configurado pelo administrador.");
-        return;
-      }
-
-      const subscription = await sw.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey)
-      });
-
-      const res = await fetch('/api/notifications/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subscription,
-          clientId: clientPortalUser.id
-        })
-      });
-
-      if (res.ok) {
-        setClientPortalUser({ ...clientPortalUser, notifications_enabled: true });
-        // Local state update for immediate UI feedback
-        const savedClient = localStorage.getItem('queen_agenda_client');
-        if (savedClient) {
-          const parsed = JSON.parse(savedClient);
-          localStorage.setItem('queen_agenda_client', JSON.stringify({ ...parsed, notifications_enabled: true }));
-        }
-        alert("Notificações ativadas com sucesso! Você receberá lembretes dos seus agendamentos.");
-      }
-    } catch (err) {
-      console.error("Erro ao ativar notificações:", err);
-      alert("Não foi possível ativar as notificações. Verifique se seu navegador suporta esta função.");
-    }
-  };
-
   const handleLogout = () => {
     setUser(null);
     setView('dashboard');
@@ -1701,7 +1574,7 @@ export default function App() {
           phone: portalPhone,
           password: portalPassword,
           barbershop_id: clientPortalShopId,
-          notifications_enabled: portalNotificationsEnabled
+          notifications_enabled: true
         })
       });
       const data = await res.json();
@@ -2691,19 +2564,6 @@ export default function App() {
                         {showPortalPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setPortalNotificationsEnabled(!portalNotificationsEnabled)}
-                      className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${portalNotificationsEnabled ? 'bg-[#C5A059]' : 'bg-gray-700'}`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${portalNotificationsEnabled ? 'translate-x-5' : 'translate-x-0'}`}
-                      />
-                    </button>
-                    <span className="text-[11px] font-bold opacity-70">Desejo receber notificações e lembretes</span>
                   </div>
 
                   <button
@@ -6774,29 +6634,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="space-y-1">
-                        <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} uppercase tracking-widest`}>
-                          Tempo de Lembrete (Notificação)
-                        </label>
-                        <select
-                          className={`w-full ${theme === 'dark' ? 'bg-[#131313] text-white' : 'bg-[#f5f5f5] text-black'} border ${theme === 'dark' ? 'border-white/10' : 'border-black/5'} rounded-xl p-3 focus:outline-none focus:border-[#ffb77d] transition-all text-sm`}
-                          value={settingsForm.reminder_lead_time_minutes}
-                          onChange={e => setSettingsForm({ ...settingsForm, reminder_lead_time_minutes: parseInt(e.target.value) })}
-                        >
-                          <option value={15}>15 minutos antes</option>
-                          <option value={30}>30 minutos antes</option>
-                          <option value={60}>1 hora antes</option>
-                          <option value={120}>2 horas antes</option>
-                          <option value={180}>3 horas antes</option>
-                          <option value={360}>6 horas antes</option>
-                          <option value={720}>12 horas antes</option>
-                          <option value={1440}>24 horas antes</option>
-                        </select>
-                        <p className={`text-[9px] font-bold ${theme === 'dark' ? 'text-white/40' : 'text-black/40'} uppercase tracking-wider`}>
-                          Define quanto tempo antes do atendimento o cliente receberá a notificação.
-                        </p>
-                      </div>
-
                       {/* --- ESPAÇOS DE UPLOAD DE IMAGENS --- */}
                       <div className={`pt-6 border-t ${theme === 'dark' ? 'border-white/5' : 'border-black/5'} space-y-4`}>
                         <div className="flex items-center gap-2">
@@ -7237,39 +7074,12 @@ export default function App() {
 
                         {/* Single Link Container */}
                         <div className="space-y-4">
-                          <div className="space-y-1">
-                            <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} uppercase tracking-widest`}>
-                              Identificador da Unidade (Link Curto)
-                            </label>
-                            <div className="flex gap-2">
-                              <div className={`flex-1 flex items-center ${theme === 'dark' ? 'bg-[#131313]' : 'bg-[#f5f5f5]'} border ${theme === 'dark' ? 'border-white/10' : 'border-black/5'} rounded-xl px-3`}>
-                                <span className="text-xs opacity-40 font-mono">/</span>
-                                <input
-                                  type="text"
-                                  placeholder="ex: esmalteria-gold"
-                                  className={`w-full bg-transparent border-none p-3 focus:outline-none text-sm font-mono`}
-                                  value={settingsForm.slug}
-                                  onChange={e => {
-                                    const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
-                                    setSettingsForm({ ...settingsForm, slug: val });
-                                  }}
-                                />
-                              </div>
-                            </div>
-                            <p className={`text-[9px] font-bold ${theme === 'dark' ? 'text-white/40' : 'text-black/40'} uppercase tracking-wider`}>
-                              Personalize o final do seu link. Use apenas letras, números e hífens.
-                            </p>
-                          </div>
-
                           {(() => {
                             let origin = window.location.origin;
-                            const shareUrl = settingsForm.slug ? `${origin}/${settingsForm.slug}` : `${origin}/?shop=${user?.shopId}`;
+                            const shareUrl = `${origin}/?shop=${user?.shopId}`;
 
                             return (
                               <div className={`p-4 rounded-xl border ${theme === 'dark' ? 'bg-black/40 border-white/5 hover:border-white/10' : 'bg-white border-black/5 hover:border-black/10'} transition-all space-y-2`}>
-                                <div className="flex justify-between items-center px-1">
-                                   <span className="text-[10px] font-black uppercase text-[#ffb77d] tracking-widest opacity-80">Link Final para Divulgação</span>
-                                </div>
                                 <div className="flex gap-2 animate-fade-in">
                                   <input
                                     type="text"
@@ -7306,35 +7116,7 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <h4 className="text-xs font-black uppercase tracking-wider text-[#ffb77d]">Como funciona para o cliente?</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className={`p-4 rounded-xl border ${theme === 'dark' ? 'bg-[#151515] border-white/5' : 'bg-white border-black/5 shadow-sm'} space-y-1.5`}>
-                            <span className="text-xl font-black text-[#ffb77d]">1.</span>
-                            <p className="font-bold text-xs uppercase tracking-wide">Acesso & Identidade</p>
-                            <p className={`text-[11px] leading-relaxed ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>
-                              O cliente acessa e se depara com a identidade visual da sua unidade (o logotipo e o banner de recados configurados).
-                            </p>
-                          </div>
-                          
-                          <div className={`p-4 rounded-xl border ${theme === 'dark' ? 'bg-[#151515] border-white/5' : 'bg-white border-black/5 shadow-sm'} space-y-1.5`}>
-                            <span className="text-xl font-black text-[#ffb77d]">2.</span>
-                            <p className="font-bold text-xs uppercase tracking-wide">Login ou Cadastro Rápido</p>
-                            <p className={`text-[11px] leading-relaxed ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>
-                              Basta preencher nome, telefone (WhatsApp) e uma senha simples de agendamento. Sem e-mails chatos ou burocracia.
-                            </p>
-                          </div>
-
-                          <div className={`p-4 rounded-xl border ${theme === 'dark' ? 'bg-[#151515] border-white/5' : 'bg-white border-black/5 shadow-sm'} space-y-1.5`}>
-                            <span className="text-xl font-black text-[#ffb77d]">3.</span>
-                            <p className="font-bold text-xs uppercase tracking-wide">Escolha e Confirmação</p>
-                            <p className={`text-[11px] leading-relaxed ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>
-                              O cliente seleciona o serviço desejado, o profissional favorito, escolhe o dia/hora livre e confirma. Aparece na sua agenda instantaneamente!
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
+                      </motion.div>
                   )}
 
                   {/* Actions Bar */}

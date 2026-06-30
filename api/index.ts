@@ -4,7 +4,6 @@ import path from "path";
 import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-import webpush from "web-push";
 
 dotenv.config();
 
@@ -196,116 +195,6 @@ app.get("/manifest.json", async (req, res) => {
       }
     ]
   });
-});
-
-// Web Push Configuration
-const VAPID_PUBLIC_KEY = cleanEnvVar(process.env.VAPID_PUBLIC_KEY);
-const VAPID_PRIVATE_KEY = cleanEnvVar(process.env.VAPID_PRIVATE_KEY);
-const VAPID_EMAIL = cleanEnvVar(process.env.VAPID_EMAIL) || "mailto:support@queenagenda.com";
-
-if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
-  console.log("[NOTIFICATIONS] Web Push VAPID keys configured.");
-} else {
-  console.warn("[NOTIFICATIONS] VAPID keys NOT configured. Web Push notifications will not work.");
-}
-
-// Background Task for Reminder Notifications
-const NOTIFICATION_CHECK_INTERVAL = 60 * 1000; // Every minute
-const notifiedAppointments = new Set<string>();
-
-async function checkAndSendReminders() {
-  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
-
-  try {
-    const now = new Date();
-    // Fetch active shops to get their lead times
-    const { data: shops } = await supabase.from('barbershops').select('id, name, reminder_lead_time_minutes');
-    if (!shops) return;
-
-    for (const shop of shops) {
-      const leadTime = shop.reminder_lead_time_minutes || 60;
-      const targetTimeStart = new Date(now.getTime() + leadTime * 60 * 1000);
-      const targetTimeEnd = new Date(targetTimeStart.getTime() + 60 * 1000); // 1 minute window
-
-      const targetDate = targetTimeStart.toISOString().split('T')[0];
-      const targetTimeStr = targetTimeStart.toTimeString().split(' ')[0].substring(0, 5); // HH:mm
-
-      // Find appointments at this exact time
-      const { data: appts, error } = await supabase
-        .from('appointments')
-        .select('*, service:services(*), professional:professionals(*)')
-        .eq('barbershop_id', shop.id)
-        .eq('date', targetDate)
-        .eq('status', 'pending')
-        .ilike('time', `${targetTimeStr}%`);
-
-      if (error || !appts) continue;
-
-      for (const appt of appts) {
-        if (notifiedAppointments.has(appt.id)) continue;
-
-        // Find the client to get their push subscription
-        const cleanPhone = appt.customer_phone?.replace(/\D/g, '');
-        const { data: client } = await supabase
-          .from('clients')
-          .select('push_subscription, notifications_enabled')
-          .eq('barbershop_id', shop.id)
-          .eq('phone', cleanPhone)
-          .single();
-
-        if (client && client.push_subscription && client.notifications_enabled !== false) {
-          try {
-            const subscription = JSON.parse(client.push_subscription);
-            const payload = JSON.stringify({
-              title: `Lembrete: ${shop.name}`,
-              body: `Olá! Seu agendamento de ${appt.service?.name} com ${appt.professional?.name} é em ${leadTime} minutos (${appt.time}).`,
-              icon: '/logo_kivo_192.png',
-              data: { url: `/portal/${shop.id}` }
-            });
-
-            await webpush.sendNotification(subscription, payload);
-            console.log(`[NOTIFICATIONS] Sent reminder to ${appt.customer_name} for appointment ${appt.id}`);
-            notifiedAppointments.add(appt.id);
-          } catch (pushErr) {
-            console.error(`[NOTIFICATIONS] Failed to send push to ${appt.customer_name}:`, pushErr);
-          }
-        }
-      }
-    }
-
-    // Cleanup old notified appointments once a day or when they are in the past
-    if (notifiedAppointments.size > 1000) {
-      notifiedAppointments.clear();
-    }
-  } catch (err) {
-    console.error("[NOTIFICATIONS CHECK ERROR]:", err);
-  }
-}
-
-setInterval(checkAndSendReminders, NOTIFICATION_CHECK_INTERVAL);
-
-app.get("/api/notifications/vapid-key", (req, res) => {
-  res.json({ publicKey: VAPID_PUBLIC_KEY });
-});
-
-app.post("/api/notifications/subscribe", async (req, res) => {
-  try {
-    const { subscription, clientId } = req.body;
-    if (!subscription || !clientId) {
-      return res.status(400).json({ error: "Subscription e clientId são obrigatórios." });
-    }
-
-    const { error } = await supabase
-      .from('clients')
-      .update({ push_subscription: JSON.stringify(subscription), notifications_enabled: true })
-      .eq('id', clientId);
-
-    if (error) throw error;
-    res.json({ success: true });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
 });
 
 // Dynamic fallback and express delivery of high-quality converted raster brand icons
@@ -726,43 +615,7 @@ async function hydrateAppointments(supabaseClient: any, appointments: any[]): Pr
 }
 
 async function resolveShopId(supabaseClient: any, idOrSlug: string | undefined): Promise<string> {
-  if (!supabaseClient || !idOrSlug) return idOrSlug || "";
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (uuidRegex.test(idOrSlug)) {
-    return idOrSlug;
-  }
-
-  try {
-    const { data: shop, error } = await supabaseClient
-      .from('barbershops')
-      .select('id')
-      .eq('slug', idOrSlug)
-      .maybeSingle();
-    
-    if (shop && shop.id && !error) {
-      return shop.id;
-    }
-
-    // Fallback: search by name-based slug if column is missing or not matched
-    const { data: allShops } = await supabaseClient.from('barbershops').select('id, name');
-    if (allShops) {
-      const match = allShops.find((s: any) => {
-        const tempSlug = (s.name || '').toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '');
-        return tempSlug === idOrSlug;
-      });
-      if (match) {
-        return match.id;
-      }
-    }
-  } catch (err) {
-    console.error(`[resolveShopId] Error resolving ${idOrSlug}:`, err);
-  }
-
-  return idOrSlug;
+  return idOrSlug || "";
 }
 
 async function ensureCompanyExists(supabaseClient: any, barbershopId: string): Promise<boolean> {
@@ -1163,7 +1016,8 @@ app.post("/api/appointments", async (req, res) => {
     if (error) throw error;
     const hydrated = (await hydrateAppointments(supabase, [data]))[0];
 
-    // Push Confirmation (Optional but good UX)
+    // Push Confirmation (Disabled as requested)
+    /*
     if (customer_phone && VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
       const cleanPhone = customer_phone.replace(/\D/g, '');
       const { data: client } = await supabase
@@ -1185,6 +1039,7 @@ app.post("/api/appointments", async (req, res) => {
         } catch (e) {}
       }
     }
+    */
 
     res.json(mapApptToFrontend(hydrated));
   } catch (err: any) {
@@ -1362,7 +1217,14 @@ app.delete("/api/plans/:id", async (req, res) => {
 app.get("/api/barbershops", async (req, res) => {
   try {
     const { data, error } = await supabase.from('barbershops').select('*, plan:plans(*)').order('created_at', { ascending: false });
-    if (error) throw error;
+    if (error) {
+      // Fallback se colunas novas faltarem (slug, reminder_lead_time_minutes)
+      const { data: fallbackData, error: fallbackError } = await supabase.from('barbershops')
+        .select('id, name, address, phone, plan_id, status, bio, photo1, photo2, photo3, logo_url, banner_url, created_at, plan:plans(*)')
+        .order('created_at', { ascending: false });
+      if (fallbackError) throw fallbackError;
+      return res.json(fallbackData);
+    }
     res.json(data);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1374,7 +1236,15 @@ app.get("/api/barbershops/:id", async (req, res) => {
     const { id } = req.params;
     const targetId = await resolveShopId(supabase, id);
     const { data, error } = await supabase.from('barbershops').select('*, plan:plans(*)').eq('id', targetId).single();
-    if (error) throw error;
+    if (error) {
+      // Fallback se colunas novas faltarem
+      const { data: fallbackData, error: fallbackError } = await supabase.from('barbershops')
+        .select('id, name, address, phone, plan_id, status, bio, photo1, photo2, photo3, logo_url, banner_url, created_at, plan:plans(*)')
+        .eq('id', targetId)
+        .single();
+      if (fallbackError) throw fallbackError;
+      return res.json(fallbackData);
+    }
     res.json(data);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1429,7 +1299,15 @@ app.post("/api/barbershops", async (req, res) => {
       photo3,
       slug: finalSlug
     }]).select();
-    if (error) throw error;
+    
+    if (error) {
+      // Fallback se colunas novas faltarem
+      const { data: retryData, error: retryError } = await supabase.from('barbershops').insert([{ 
+        name, address, phone: cleanPhone, plan_id, password, status, logo_url, banner_url, bio, photo1, photo2, photo3
+      }]).select();
+      if (retryError) throw retryError;
+      return res.json(retryData[0]);
+    }
     res.json(data[0]);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1516,7 +1394,16 @@ app.put("/api/barbershops/:id", async (req, res) => {
     }
 
     const { data, error } = await supabase.from('barbershops').update(updatePayload).eq('id', id).select();
-    if (error) throw error;
+    if (error) {
+      // Fallback se colunas novas faltarem
+      const safePayload = { ...updatePayload };
+      delete safePayload.slug;
+      delete safePayload.reminder_lead_time_minutes;
+      delete safePayload.whatsapp;
+      const { data: retryData, error: retryError } = await supabase.from('barbershops').update(safePayload).eq('id', id).select();
+      if (retryError) throw retryError;
+      return res.json(retryData[0]);
+    }
     res.json(data[0]);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
