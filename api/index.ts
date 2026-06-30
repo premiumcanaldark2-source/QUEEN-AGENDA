@@ -1240,7 +1240,7 @@ app.get("/api/barbershops/:id", async (req, res) => {
 
 app.post("/api/barbershops", async (req, res) => {
   try {
-    const { name, address, phone, plan_id, password, status } = req.body;
+    const { name, address, phone, plan_id, password, status, display_name } = req.body;
     let logo_url = req.body.logo_url;
     let banner_url = req.body.banner_url;
     let bio = req.body.bio;
@@ -1266,6 +1266,7 @@ app.post("/api/barbershops", async (req, res) => {
 
     const { data, error } = await supabase.from('barbershops').insert([{ 
       name, 
+      display_name,
       address, 
       phone: cleanPhone, 
       plan_id, 
@@ -1289,7 +1290,7 @@ app.post("/api/barbershops", async (req, res) => {
 app.put("/api/barbershops/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, address, phone, plan_id, password, status } = req.body;
+    const { name, address, phone, plan_id, password, status, display_name } = req.body;
     let logo_url = req.body.logo_url;
     let banner_url = req.body.banner_url;
     let bio = req.body.bio;
@@ -1341,7 +1342,8 @@ app.put("/api/barbershops/:id", async (req, res) => {
       bio,
       photo1,
       photo2,
-      photo3
+      photo3,
+      display_name
     };
 
     if (password) updatePayload.password = password;
@@ -1407,8 +1409,8 @@ app.get("/api/services", async (req, res) => {
 
 app.post("/api/services", async (req, res) => {
   try {
-    const { barbershop_id, name, price, duration_minutes } = req.body;
-    const { data, error } = await supabase.from('services').insert([{ barbershop_id, name, price, duration_minutes }]).select();
+    const { barbershop_id, name, price, duration_minutes, professional_ids } = req.body;
+    const { data, error } = await supabase.from('services').insert([{ barbershop_id, name, price, duration_minutes, professional_ids }]).select();
     if (error) throw error;
     res.json(data[0]);
   } catch (err: any) {
@@ -1419,8 +1421,8 @@ app.post("/api/services", async (req, res) => {
 app.put("/api/services/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, price, duration_minutes } = req.body;
-    const { data, error } = await supabase.from('services').update({ name, price, duration_minutes }).eq('id', id).select();
+    const { name, price, duration_minutes, professional_ids } = req.body;
+    const { data, error } = await supabase.from('services').update({ name, price, duration_minutes, professional_ids }).eq('id', id).select();
     if (error) throw error;
     res.json(data[0]);
   } catch (err: any) {

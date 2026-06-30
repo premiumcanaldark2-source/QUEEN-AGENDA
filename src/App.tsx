@@ -547,6 +547,7 @@ export default function App() {
   const [settingsTab, setSettingsTab] = useState<'general' | 'hours' | 'portal'>('general');
   const [settingsForm, setSettingsForm] = useState({
     name: '',
+    displayName: '',
     address: '',
     phone: '',
     logoUrl: '',
@@ -773,6 +774,7 @@ export default function App() {
       const parsed = parseBarbershopAddress(user.shop.address);
       setSettingsForm({
         name: user.shop.name || '',
+        displayName: user.shop.display_name || '',
         address: parsed.addressOnly || '',
         phone: user.shop.phone || '',
         logoUrl: user.shop.logo_url || parsed.logoUrl || '',
@@ -906,6 +908,7 @@ export default function App() {
       
       const payload = {
         name: settingsForm.name,
+        display_name: settingsForm.displayName,
         address: fullAddress,
         phone: settingsForm.phone,
         plan_id: user.shop?.plan_id,
@@ -2006,7 +2009,7 @@ export default function App() {
     password: '',
     status: 'active' as 'active' | 'blocked'
   });
-  const [newService, setNewService] = useState({ name: '', price: 0, duration_minutes: 30 });
+  const [newService, setNewService] = useState({ name: '', price: 0, duration_minutes: 30, professional_ids: [] as string[] });
   const [newProfessional, setNewProfessional] = useState({ 
     name: '', 
     phone: '', 
@@ -2221,6 +2224,7 @@ export default function App() {
         setEditingBarbershop(null);
         setNewBarbershop({
           name: '',
+          display_name: '',
           address: '',
           phone: '',
           plan_id: '',
@@ -2278,7 +2282,7 @@ export default function App() {
       if (res.ok && !data.error) {
         setIsServiceModalOpen(false);
         setEditingService(null);
-        setNewService({ name: '', price: 0, duration_minutes: 30 });
+        setNewService({ name: '', price: 0, duration_minutes: 30, professional_ids: [] });
         await fetchData();
       } else {
         setErrorStatus(data.error || "Erro salvar serviço.");
@@ -2493,7 +2497,7 @@ export default function App() {
                   </div>
                 )}
                 <h2 className="text-xl font-black uppercase tracking-tight text-[#C5A059] mt-3 italic">
-                  <span className="notranslate" translate="no">{clientPortalShop?.name || 'KIVVO AGENDA'}</span>
+                  <span className="notranslate" translate="no">{clientPortalShop?.display_name || clientPortalShop?.name || 'KIVVO AGENDA'}</span>
                 </h2>
                 <p className="text-[11px] opacity-60 font-medium max-w-xs mx-auto leading-relaxed">
                   {portalFormType === 'register' 
@@ -2740,7 +2744,7 @@ export default function App() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-[#C5A059] font-black text-2xl bg-white">
-                      {clientPortalShop?.name?.slice(0, 1).toUpperCase()}
+                      {(clientPortalShop?.display_name || clientPortalShop?.name || 'Q')?.slice(0, 1).toUpperCase()}
                     </div>
                   )}
                 </button>
@@ -2759,7 +2763,7 @@ export default function App() {
                     className="text-left bg-transparent border-none p-0 cursor-pointer block group"
                   >
                     <h1 className="text-xl md:text-2xl font-black uppercase tracking-tighter drop-shadow-md text-[#C5A059] font-sans transition-all group-hover:text-[#D4AF37]">
-                      <span className="notranslate" translate="no">{clientPortalShop?.name}</span>
+                      <span className="notranslate" translate="no">{clientPortalShop?.display_name || clientPortalShop?.name}</span>
                     </h1>
                   </button>
                   <p className="text-[10px] md:text-xs opacity-90 font-semibold drop-shadow-md flex items-center gap-1 font-sans text-white">
@@ -3096,73 +3100,82 @@ export default function App() {
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
-                        {clientPortalProfessionals.length > 0 ? (
-                          clientPortalProfessionals.map(prof => {
-                            const isSelected = portalSelectedProfessional?.id === prof.id;
-                            const colorClass = getProfessionalColorStyles(prof.id, clientPortalProfessionals, theme);
-                            return (
-                              <button
-                                key={prof.id}
-                                onClick={() => {
-                                  setPortalSelectedProfessional(prof);
-                                  setPortalStep(3);
-                                }}
-                                className={`group w-full p-0 rounded-[2.5rem] border overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 flex flex-col items-center ${
-                                  isSelected
-                                    ? 'bg-[#ffb77d]/20 border-[#ffb77d] ring-4 ring-[#ffb77d]/20'
-                                    : theme === 'dark'
-                                      ? 'bg-[#121212] border-white/5 hover:border-[#ffb77d]/40'
-                                      : 'bg-white border-black/5 hover:border-[#ffb77d]/40 shadow-xl shadow-black/5'
-                                }`}
-                              >
-                                {/* Foto Grande e Quadrada */}
-                                <div className="w-full aspect-square overflow-hidden relative bg-[#1a1a1a]">
-                                  {prof.photo_url ? (
-                                    <img 
-                                      src={prof.photo_url} 
-                                      alt={prof.name} 
-                                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                                      referrerPolicy="no-referrer"
-                                    />
-                                  ) : (
-                                    <div className={`w-full h-full flex items-center justify-center font-black text-6xl uppercase ${colorClass}`}>
-                                      {prof.name.slice(0, 1).toUpperCase()}
-                                    </div>
-                                  )}
-                                  
-                                  {/* Overlay no Hover */}
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end justify-center pb-8">
-                                    <div className="bg-[#ffb77d] text-black px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] shadow-xl">
-                                      Selecionar Profissional
-                                    </div>
-                                  </div>
-                                </div>
+                        {(() => {
+                          const filtered = clientPortalProfessionals.filter(prof => {
+                            if (!portalSelectedService?.professional_ids || portalSelectedService.professional_ids.length === 0) {
+                              return true;
+                            }
+                            return portalSelectedService.professional_ids.includes(prof.id);
+                          });
 
-                                {/* Info do Profissional Centralizada */}
-                                <div className="p-8 w-full text-center space-y-2">
-                                  <h4 className={`text-2xl font-black uppercase tracking-tighter italic ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
-                                    {prof.name}
-                                  </h4>
-                                  <div className="flex flex-col items-center gap-3">
-                                    <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                                      theme === 'dark' ? 'bg-white/10 text-[#ffb77d]' : 'bg-black/5 text-[#8B7344]'
-                                    }`}>
-                                      Profissional
-                                    </span>
+                          return filtered.length > 0 ? (
+                            filtered.map(prof => {
+                              const isSelected = portalSelectedProfessional?.id === prof.id;
+                              const colorClass = getProfessionalColorStyles(prof.id, clientPortalProfessionals, theme);
+                              return (
+                                <button
+                                  key={prof.id}
+                                  onClick={() => {
+                                    setPortalSelectedProfessional(prof);
+                                    setPortalStep(3);
+                                  }}
+                                  className={`group w-full p-0 rounded-[2.5rem] border overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 flex flex-col items-center ${
+                                    isSelected
+                                      ? 'bg-[#ffb77d]/20 border-[#ffb77d] ring-4 ring-[#ffb77d]/20'
+                                      : theme === 'dark'
+                                        ? 'bg-[#121212] border-white/5 hover:border-[#ffb77d]/40'
+                                        : 'bg-white border-black/5 hover:border-[#ffb77d]/40 shadow-xl shadow-black/5'
+                                  }`}
+                                >
+                                  {/* Foto Grande e Quadrada */}
+                                  <div className="w-full aspect-square overflow-hidden relative bg-[#1a1a1a]">
+                                    {prof.photo_url ? (
+                                      <img 
+                                        src={prof.photo_url} 
+                                        alt={prof.name} 
+                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                                        referrerPolicy="no-referrer"
+                                      />
+                                    ) : (
+                                      <div className={`w-full h-full flex items-center justify-center font-black text-6xl uppercase ${colorClass}`}>
+                                        {prof.name.slice(0, 1).toUpperCase()}
+                                      </div>
+                                    )}
                                     
-                                    <div className={`h-1 w-12 rounded-full transition-all duration-500 ${
-                                      isSelected ? 'bg-[#ffb77d] w-20' : 'bg-[#C5A059]/20'
-                                    }`} />
+                                    {/* Overlay no Hover */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end justify-center pb-8">
+                                      <div className="bg-[#ffb77d] text-black px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] shadow-xl">
+                                        Selecionar Profissional
+                                      </div>
+                                    </div>
                                   </div>
-                                </div>
-                              </button>
-                            );
-                          })
-                        ) : (
-                          <div className={`p-10 text-center border-2 border-dashed ${theme === 'dark' ? 'border-white/5' : 'border-black/5'} rounded-2xl opacity-50 text-xs font-bold`}>
-                            Nenhum profissional disponível no momento.
-                          </div>
-                        )}
+
+                                  {/* Info do Profissional Centralizada */}
+                                  <div className="p-8 w-full text-center space-y-2">
+                                    <h4 className={`text-2xl font-black uppercase tracking-tighter italic ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+                                      {prof.name}
+                                    </h4>
+                                    <div className="flex flex-col items-center gap-3">
+                                      <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                        theme === 'dark' ? 'bg-white/10 text-[#ffb77d]' : 'bg-black/5 text-[#8B7344]'
+                                      }`}>
+                                        Profissional
+                                      </span>
+                                      
+                                      <div className={`h-1 w-12 rounded-full transition-all duration-500 ${
+                                        isSelected ? 'bg-[#ffb77d] w-20' : 'bg-[#C5A059]/20'
+                                      }`} />
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <div className={`col-span-full p-10 text-center border-2 border-dashed ${theme === 'dark' ? 'border-white/5' : 'border-black/5'} rounded-2xl opacity-50 text-xs font-bold uppercase tracking-widest`}>
+                              Nenhum profissional disponível para este serviço.
+                            </div>
+                          );
+                        })()}
                       </div>
                     </motion.div>
                   )}
@@ -3791,7 +3804,7 @@ export default function App() {
                         <div className="border-b border-light-gray dark:border-white/5 pb-2">
                           <p className="text-[8px] font-black uppercase opacity-40">Estabelecimento</p>
                           <p className="font-extrabold text-xs uppercase mt-0.5">
-                            <span className="notranslate" translate="no">{clientPortalShop?.name}</span>
+                            <span className="notranslate" translate="no">{clientPortalShop?.display_name || clientPortalShop?.name}</span>
                           </p>
                         </div>
                         <div className="border-b border-light-gray dark:border-white/5 pb-2">
@@ -4378,7 +4391,12 @@ export default function App() {
             <Calendar size={20} />
           </div>
           <div>
-            <h1 className="text-lg font-black text-[#D4AF37] uppercase tracking-tighter leading-none italic">Queen <span className="font-light">Agenda</span></h1>
+            <h1 className="text-lg font-black text-[#D4AF37] uppercase tracking-tighter leading-none italic">
+              {user.role === 'master' 
+                ? (<>Queen <span className="font-light">Agenda</span></>)
+                : (user.shop?.display_name || user.shop?.name || 'QUEEN AGENDA')
+              }
+            </h1>
             <p className={`text-[9px] font-bold ${theme === 'dark' ? 'text-black' : 'text-[#8B7344]'} opacity-50 mt-1 leading-none`}>
               {user.role === 'master' ? 'Admin Master' : 'Painel Parceiro'}
             </p>
@@ -4530,7 +4548,7 @@ export default function App() {
           <h2 className="text-sm md:text-xl font-bold uppercase tracking-tight truncate max-w-[140px] sm:max-w-none text-black">
             {user.role === 'master' 
               ? (view === 'dashboard' ? 'Painel Master' : view === 'plans' ? 'Gestão de Planos' : 'Gestão de Unidades')
-              : (user.role === 'barber' ? 'Painel do Proprietário' : 'Painel do Profissional')}
+              : (user.shop?.display_name || user.shop?.name || 'QUEEN AGENDA')}
           </h2>
           <div className="flex items-center gap-4">
             {(user?.role === 'barber' || user?.role === 'professional') && (
@@ -4979,7 +4997,12 @@ export default function App() {
                     <tbody className="text-sm">
                       {barbershops.length > 0 ? barbershops.slice((masterBarbershopPage - 1) * 10, masterBarbershopPage * 10).map((shop) => (
                         <tr key={shop.id} className={`border-b ${theme === 'dark' ? 'border-white/5 hover:bg-white/5' : 'border-black/5 hover:bg-black/5'} transition-colors`}>
-                          <td className="p-4 font-bold">{shop.name}</td>
+                          <td className="p-4 font-bold flex flex-col">
+                            <span>{shop.name}</span>
+                            {shop.display_name && (
+                              <span className="text-[10px] opacity-40 font-normal uppercase tracking-tight">Visível: {shop.display_name}</span>
+                            )}
+                          </td>
                           <td className={`p-4 ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} max-w-xs truncate`}>{shop.address ? shop.address.split('|||')[0] : ''}</td>
                           <td className="p-4">{shop.phone}</td>
                           <td className="p-4 font-mono font-bold text-[#ffb77d]">{shop.password || '---'}</td>
@@ -5002,6 +5025,7 @@ export default function App() {
                                   setEditingBarbershop(shop);
                                   setNewBarbershop({
                                     name: shop.name,
+                                    display_name: shop.display_name || '',
                                     address: shop.address ? shop.address.split('|||')[0] : '',
                                     phone: shop.phone,
                                     plan_id: shop.plan_id,
@@ -6461,7 +6485,7 @@ export default function App() {
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button onClick={() => {
                             setEditingService(service);
-                            setNewService({ name: service.name, price: service.price, duration_minutes: service.duration_minutes });
+                            setNewService({ name: service.name, price: service.price, duration_minutes: service.duration_minutes, professional_ids: service.professional_ids || [] });
                             setIsServiceModalOpen(true);
                           }} className="p-2 hover:bg-[#ffb77d]/10 text-[#ffb77d] rounded-lg">
                             <Edit3 size={16} />
@@ -6678,16 +6702,29 @@ export default function App() {
                       
                       <div className="space-y-1">
                         <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} uppercase tracking-widest`}>
-                          Nome da Unidade
+                          Nome da Unidade (Identificação Interna)
                         </label>
                         <input
-                          required
+                          disabled
+                          type="text"
+                          className={`w-full ${theme === 'dark' ? 'bg-[#131313] text-white' : 'bg-[#f5f5f5] text-black'} border ${theme === 'dark' ? 'border-white/10' : 'border-black/5'} rounded-xl p-3 focus:outline-none opacity-50 cursor-not-allowed`}
+                          value={settingsForm.name}
+                        />
+                        <p className="text-[9px] opacity-40 font-bold uppercase tracking-tight">Este nome é usado para identificação administrativa e não pode ser alterado.</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} uppercase tracking-widest`}>
+                          Nome de Exibição (Para Clientes)
+                        </label>
+                        <input
                           type="text"
                           className={`w-full ${theme === 'dark' ? 'bg-[#131313] text-white' : 'bg-[#f5f5f5] text-black'} border ${theme === 'dark' ? 'border-white/10' : 'border-black/5'} rounded-xl p-3 focus:outline-none focus:border-[#ffb77d] transition-all`}
-                          placeholder="Ex: Queen Agenda"
-                          value={settingsForm.name}
-                          onChange={e => setSettingsForm({ ...settingsForm, name: e.target.value })}
+                          placeholder="Ex: Ivo Barber Premium"
+                          value={settingsForm.displayName}
+                          onChange={e => setSettingsForm({ ...settingsForm, displayName: e.target.value })}
                         />
+                        <p className="text-[9px] opacity-40 font-bold uppercase tracking-tight">Este é o nome que seus clientes verão no portal e no topo do seu painel.</p>
                       </div>
 
                       <div className="space-y-1">
@@ -8237,6 +8274,7 @@ export default function App() {
                   setErrorStatus(null);
                   setNewBarbershop({
                     name: '',
+                    display_name: '',
                     address: '',
                     phone: '',
                     plan_id: '',
@@ -8249,7 +8287,7 @@ export default function App() {
               </div>
               <form onSubmit={handleCreateBarbershop} className="space-y-4">
                 <div className="space-y-1">
-                  <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} uppercase tracking-widest`}>Nome da Unidade</label>
+                  <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} uppercase tracking-widest`}>Nome da Unidade (Identificação Interna)</label>
                   <input 
                     required
                     type="text" 
@@ -8257,6 +8295,16 @@ export default function App() {
                     className={`w-full ${theme === 'dark' ? 'bg-[#131313]' : 'bg-[#f5f5f5]'} border ${theme === 'dark' ? 'border-white/10' : 'border-black/5'} rounded-xl p-3 focus:outline-none focus:border-[#ff8c00] transition-all`}
                     value={newBarbershop.name}
                     onChange={e => setNewBarbershop({...newBarbershop, name: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} uppercase tracking-widest`}>Nome de Exibição (Opcional - Para Clientes)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ex: Ivo Barber Premium"
+                    className={`w-full ${theme === 'dark' ? 'bg-[#131313]' : 'bg-[#f5f5f5]'} border ${theme === 'dark' ? 'border-white/10' : 'border-black/5'} rounded-xl p-3 focus:outline-none focus:border-[#ff8c00] transition-all`}
+                    value={newBarbershop.display_name}
+                    onChange={e => setNewBarbershop({...newBarbershop, display_name: e.target.value})}
                   />
                 </div>
                 <div className="space-y-1">
@@ -8360,7 +8408,7 @@ export default function App() {
                 <button onClick={() => {
                   setIsServiceModalOpen(false);
                   setEditingService(null);
-                  setNewService({ name: '', price: 0, duration_minutes: 30 });
+                  setNewService({ name: '', price: 0, duration_minutes: 30, professional_ids: [] });
                 }} className={`${theme === 'dark' ? 'text-[#ddc1ae] hover:text-white' : 'text-[#a48c7a] hover:text-black'}`}>
                   <X size={20} />
                 </button>
@@ -8401,6 +8449,38 @@ export default function App() {
                     />
                   </div>
                 </div>
+
+                <div className="space-y-1.5">
+                  <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} uppercase tracking-widest`}>Profissionais vinculados</label>
+                  <div className={`space-y-2 max-h-40 overflow-y-auto p-3 border rounded-xl ${theme === 'dark' ? 'bg-black/20 border-white/10' : 'bg-black/5 border-black/5'}`}>
+                    {professionals.map(prof => (
+                      <label key={prof.id} className="flex items-center gap-3 cursor-pointer group">
+                        <input 
+                          type="checkbox"
+                          className="w-4 h-4 rounded border-gray-300 text-[#C5A059] focus:ring-[#C5A059] cursor-pointer"
+                          checked={newService.professional_ids?.includes(prof.id)}
+                          onChange={(e) => {
+                            const ids = [...(newService.professional_ids || [])];
+                            if (e.target.checked) {
+                              ids.push(prof.id);
+                            } else {
+                              const index = ids.indexOf(prof.id);
+                              if (index > -1) ids.splice(index, 1);
+                            }
+                            setNewService({ ...newService, professional_ids: ids });
+                          }}
+                        />
+                        <span className={`text-sm font-medium ${theme === 'dark' ? 'text-white/70 group-hover:text-white' : 'text-black/60 group-hover:text-black'} transition-colors`}>
+                          {prof.name}
+                        </span>
+                      </label>
+                    ))}
+                    {professionals.length === 0 && (
+                      <p className="text-[10px] opacity-40 uppercase tracking-widest text-center py-2 italic font-bold">Nenhum profissional cadastrado</p>
+                    )}
+                  </div>
+                </div>
+
                 <button 
                   disabled={isLoading}
                   type="submit"

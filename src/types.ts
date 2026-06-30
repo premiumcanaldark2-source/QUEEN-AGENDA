@@ -22,6 +22,7 @@ export interface Barbershop {
   photo3?: string;
   logo_url?: string;
   banner_url?: string;
+  display_name?: string;
   whatsapp?: string;
   reminder_lead_time_minutes?: number;
   slug?: string;
@@ -57,6 +58,7 @@ export interface Service {
   name: string;
   price: number;
   duration_minutes: number;
+  professional_ids?: string[];
   created_at?: string;
 }
 

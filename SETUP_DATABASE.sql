@@ -56,6 +56,10 @@ BEGIN
     ALTER TABLE barbershops ADD COLUMN slug TEXT;
   END IF;
 
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='barbershops' AND column_name='display_name') THEN
+    ALTER TABLE barbershops ADD COLUMN display_name TEXT;
+  END IF;
+
   -- Tentar adicionar a restrição UNIQUE se não existir
   BEGIN
     ALTER TABLE barbershops ADD CONSTRAINT barbershops_slug_key UNIQUE (slug);
@@ -77,14 +81,18 @@ CREATE TABLE IF NOT EXISTS services (
   name TEXT NOT NULL,
   price DECIMAL(10,2) NOT NULL,
   duration_minutes INTEGER NOT NULL DEFAULT 30,
+  professional_ids UUID[] DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Caso a tabela já exista, garantir que a coluna duration_minutes existe:
+-- Caso a tabela já exista, garantir que as colunas existem:
 DO $$ 
 BEGIN 
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='services' AND column_name='duration_minutes') THEN
     ALTER TABLE services ADD COLUMN duration_minutes INTEGER DEFAULT 30;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='services' AND column_name='professional_ids') THEN
+    ALTER TABLE services ADD COLUMN professional_ids UUID[] DEFAULT '{}';
   END IF;
 END $$;
 
