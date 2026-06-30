@@ -3095,7 +3095,7 @@ export default function App() {
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
                         {clientPortalProfessionals.length > 0 ? (
                           clientPortalProfessionals.map(prof => {
                             const isSelected = portalSelectedProfessional?.id === prof.id;
@@ -3107,48 +3107,52 @@ export default function App() {
                                   setPortalSelectedProfessional(prof);
                                   setPortalStep(3);
                                 }}
-                                className={`w-full p-4 rounded-2xl border text-left flex items-center gap-4 transition-all ${
+                                className={`group w-full p-0 rounded-[2.5rem] border overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 flex flex-col items-center ${
                                   isSelected
-                                    ? 'bg-[#ffb77d]/10 border-[#ffb77d] scale-[1.01]'
+                                    ? 'bg-[#ffb77d]/20 border-[#ffb77d] ring-4 ring-[#ffb77d]/20'
                                     : theme === 'dark'
-                                      ? 'bg-[#121212] border-white/5 hover:border-[#ffb77d]/30'
-                                      : 'bg-white border-black/5 hover:border-[#ffb77d]/50 shadow-sm'
+                                      ? 'bg-[#121212] border-white/5 hover:border-[#ffb77d]/40'
+                                      : 'bg-white border-black/5 hover:border-[#ffb77d]/40 shadow-xl shadow-black/5'
                                 }`}
                               >
-                                <div 
-                                  className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-white/10 shadow-lg bg-[#1a1a1a] cursor-zoom-in group relative"
-                                  onClick={(e) => {
-                                    if (prof.photo_url) {
-                                      e.stopPropagation();
-                                      setZoomedImage(prof.photo_url);
-                                    }
-                                  }}
-                                >
+                                {/* Foto Grande e Quadrada */}
+                                <div className="w-full aspect-square overflow-hidden relative bg-[#1a1a1a]">
                                   {prof.photo_url ? (
-                                    <>
-                                      <img 
-                                        src={prof.photo_url} 
-                                        alt={prof.name} 
-                                        className="w-full h-full object-cover transition-transform group-hover:scale-110" 
-                                        referrerPolicy="no-referrer"
-                                      />
-                                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <Eye size={20} className="text-white" />
-                                      </div>
-                                    </>
+                                    <img 
+                                      src={prof.photo_url} 
+                                      alt={prof.name} 
+                                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                                      referrerPolicy="no-referrer"
+                                    />
                                   ) : (
-                                    <div className={`w-full h-full flex items-center justify-center font-black text-lg uppercase ${colorClass}`}>
+                                    <div className={`w-full h-full flex items-center justify-center font-black text-6xl uppercase ${colorClass}`}>
                                       {prof.name.slice(0, 1).toUpperCase()}
                                     </div>
                                   )}
+                                  
+                                  {/* Overlay no Hover */}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end justify-center pb-8">
+                                    <div className="bg-[#ffb77d] text-black px-6 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.2em] shadow-xl">
+                                      Selecionar Profissional
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="flex-1">
-                                  <h4 className="font-bold text-sm uppercase tracking-wide">{prof.name}</h4>
-                                  <p className="text-[9px] opacity-40 font-bold mt-0.5 uppercase tracking-widest">Profissional</p>
-                                </div>
-                                <div className="text-right shrink-0">
-                                  <div className="w-8 h-8 rounded-full bg-[#C5A059]/10 flex items-center justify-center text-[#C5A059]">
-                                    <ChevronRight size={16} />
+
+                                {/* Info do Profissional Centralizada */}
+                                <div className="p-8 w-full text-center space-y-2">
+                                  <h4 className={`text-2xl font-black uppercase tracking-tighter italic ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+                                    {prof.name}
+                                  </h4>
+                                  <div className="flex flex-col items-center gap-3">
+                                    <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                      theme === 'dark' ? 'bg-white/10 text-[#ffb77d]' : 'bg-black/5 text-[#8B7344]'
+                                    }`}>
+                                      Profissional
+                                    </span>
+                                    
+                                    <div className={`h-1 w-12 rounded-full transition-all duration-500 ${
+                                      isSelected ? 'bg-[#ffb77d] w-20' : 'bg-[#C5A059]/20'
+                                    }`} />
                                   </div>
                                 </div>
                               </button>
