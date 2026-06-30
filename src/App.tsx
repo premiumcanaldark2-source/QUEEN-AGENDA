@@ -678,7 +678,21 @@ export default function App() {
   }, [clientPortalAppointments]);
 
   const playNotificationSound = (type: 'new' | 'cancel') => {
-    // Desativado conforme solicitado
+    try {
+      // Sons de notificação profissionais
+      const soundUrl = type === 'new' 
+        ? 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' // Ding suave para novo agendamento
+        : 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'; // Som sutil para cancelamento
+      
+      const audio = new Audio(soundUrl);
+      audio.volume = 0.6;
+      audio.play().catch(e => {
+        // Silenciosamente falha se o navegador bloquear autoplay sem interação prévia
+        console.log("Som de notificação bloqueado pelo navegador (aguardando interação):", e.message);
+      });
+    } catch (err) {
+      console.error("Erro ao processar áudio de notificação:", err);
+    }
   };
 
   // Sincronizar dados da barbearia para o formulário de configurações ao carregar quando entra na tela
@@ -8480,9 +8494,9 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className={`relative ${theme === 'dark' ? 'bg-[#20201f] border-white/10' : 'bg-white border-black/5'} w-full max-w-md rounded-2xl p-8 shadow-2xl border transition-colors duration-300`}
+              className={`relative ${theme === 'dark' ? 'bg-[#20201f] border-white/10' : 'bg-white border-black/5'} w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl p-6 shadow-2xl border transition-colors duration-300`}
             >
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold text-[#D4AF37]">
                   {editingAppointment ? 'Editar Agendamento' : 'Novo Agendamento'}
                 </h3>
@@ -8682,6 +8696,28 @@ export default function App() {
                       <option value="cancelled">CANCELADO</option>
                     </select>
                   </div>
+                )}
+
+                {editingAppointment && newAppointment.customer_phone && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const profName = professionals.find(p => p.id === newAppointment.professional_id)?.name || '';
+                      const shopName = user?.shop?.name || 'nosso estabelecimento';
+                      const time = newAppointment.time;
+                      const dateParts = newAppointment.date.split('-');
+                      const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : newAppointment.date;
+                      
+                      const message = `Olá, passando para lembrar do seu agendamento no ${shopName} às ${time} do dia ${formattedDate} com o profissional ${profName}.`;
+                      const cleanPhone = newAppointment.customer_phone.replace(/\D/g, '');
+                      const whatsappUrl = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`;
+                      window.open(whatsappUrl, '_blank');
+                    }}
+                    className="w-full flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-xl font-bold uppercase tracking-widest mt-2 hover:brightness-110 active:scale-95 transition-all shadow-lg"
+                  >
+                    <MessageSquare size={18} />
+                    Confirmar via WhatsApp
+                  </button>
                 )}
 
                 <button 
