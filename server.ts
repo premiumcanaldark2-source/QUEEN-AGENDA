@@ -102,7 +102,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[SERVER] KIVO BARBER rodando com sucesso na porta ${PORT}`);
+    console.log(`[SERVER] Queen Agenda rodando com sucesso na porta ${PORT}`);
   });
 }
 

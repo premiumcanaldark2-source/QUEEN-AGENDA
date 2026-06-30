@@ -486,7 +486,6 @@ export default function App() {
     photo1: '',
     photo2: '',
     photo3: '',
-    whatsapp: '',
   });
   const [settingsHours, setSettingsHours] = useState<OperatingHours>(defaultOperatingHours);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
@@ -690,7 +689,6 @@ export default function App() {
         name: user.shop.name || '',
         address: parsed.addressOnly || '',
         phone: user.shop.phone || '',
-        whatsapp: user.shop.whatsapp || '',
         logoUrl: user.shop.logo_url || parsed.logoUrl || '',
         bannerUrl: user.shop.banner_url || parsed.bannerUrl || '',
         bio: user.shop.bio || parsed.bio || '',
@@ -824,7 +822,6 @@ export default function App() {
         name: settingsForm.name,
         address: fullAddress,
         phone: settingsForm.phone,
-        whatsapp: settingsForm.whatsapp,
         plan_id: user.shop?.plan_id,
         status: user.shop?.status,
         logo_url: settingsForm.logoUrl,
@@ -1573,8 +1570,7 @@ export default function App() {
           name: portalName,
           phone: portalPhone,
           password: portalPassword,
-          barbershop_id: clientPortalShopId,
-          notifications_enabled: true
+          barbershop_id: clientPortalShopId
         })
       });
       const data = await res.json();
@@ -2683,17 +2679,7 @@ export default function App() {
                   <p className="text-[10px] md:text-xs opacity-90 font-semibold drop-shadow-md flex items-center gap-1 font-sans text-white">
                     📍 {shopCleanAddress || "Endereço não informado"}
                   </p>
-                  {clientPortalShop?.whatsapp && (
-                    <a 
-                      href={`https://wa.me/55${clientPortalShop.whatsapp.replace(/\D/g, '')}?text=Olá,%20gostaria%20de%20informações!`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 bg-green-500 text-black px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:brightness-110 transition-all mt-2 shadow-lg shadow-green-500/20 w-fit"
-                    >
-                      <MessageSquare size={12} />
-                      Falar no WhatsApp
-                    </a>
-                  )}
+
                   {(() => {
                     const now = new Date();
                     const year = now.getFullYear();
@@ -6537,19 +6523,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => {
-                      setSettingsSuccess(null);
-                      setSettingsError(null);
-                      setSettingsTab('portal');
-                    }}
-                    className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-                      settingsTab === 'portal'
-                        ? 'bg-[#ffb77d] text-[#4d2600]'
-                        : theme === 'dark'
-                          ? 'text-[#ddc1ae] hover:bg-white/5'
-                          : 'text-[#a48c7a] hover:bg-black/5'
-                    }`}
-                  >
-                    <Globe size={14} />
+                      setSettingsSuccess(null); setSettingsError(null); setSettingsTab('portal'); }}> <Globe size={14} />
                     Link de Agendamento Online
                   </button>
                 </div>
@@ -6606,35 +6580,23 @@ export default function App() {
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} uppercase tracking-widest`}>
-                            Telefone de Contato
-                          </label>
-                          <input
-                            required
-                            type="text"
-                            className={`w-full ${theme === 'dark' ? 'bg-[#131313] text-white' : 'bg-[#f5f5f5] text-black'} border ${theme === 'dark' ? 'border-white/10' : 'border-black/5'} rounded-xl p-3 focus:outline-none focus:border-[#ffb77d] transition-all`}
-                            placeholder="Ex: (11) 99999-9999"
-                            value={settingsForm.phone}
-                            onChange={e => setSettingsForm({ ...settingsForm, phone: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} uppercase tracking-widest`}>
-                            WhatsApp (Link Direto)
-                          </label>
-                          <input
-                            type="text"
-                            className={`w-full ${theme === 'dark' ? 'bg-[#131313] text-white' : 'bg-[#f5f5f5] text-black'} border ${theme === 'dark' ? 'border-white/10' : 'border-black/5'} rounded-xl p-3 focus:outline-none focus:border-[#ffb77d] transition-all`}
-                            placeholder="Ex: (11) 99999-9999"
-                            value={settingsForm.whatsapp}
-                            onChange={e => setSettingsForm({ ...settingsForm, whatsapp: e.target.value })}
-                          />
-                        </div>
+                      <div className="space-y-1">
+                        <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} uppercase tracking-widest`}>
+                          Telefone de Contato
+                        </label>
+                        <input
+                          required
+                          type="text"
+                          className={`w-full ${theme === 'dark' ? 'bg-[#131313] text-white' : 'bg-[#f5f5f5] text-black'} border ${theme === 'dark' ? 'border-white/10' : 'border-black/5'} rounded-xl p-3 focus:outline-none focus:border-[#ffb77d] transition-all`}
+                          placeholder="Ex: (11) 99999-9999"
+                          value={settingsForm.phone}
+                          onChange={e => setSettingsForm({ ...settingsForm, phone: e.target.value })}
+                        />
                       </div>
 
-                      {/* --- ESPAÇOS DE UPLOAD DE IMAGENS --- */}
+
+
+                          {/* --- ESPAÇOS DE UPLOAD DE IMAGENS --- */}
                       <div className={`pt-6 border-t ${theme === 'dark' ? 'border-white/5' : 'border-black/5'} space-y-4`}>
                         <div className="flex items-center gap-2">
                           <ImageIcon size={18} className="text-[#ffb77d]" />
@@ -8025,7 +7987,7 @@ export default function App() {
               <button onClick={() => setView('terms')} className="hover:text-[#C5A059] cursor-pointer transition-colors">Termos</button>
               <button onClick={() => setView('privacy')} className="hover:text-[#C5A059] cursor-pointer transition-colors">Privacidade</button>
               <a 
-                href={`https://wa.me/5581998591594?text=${encodeURIComponent("Olá! Preciso de suporte com o sistema IVO BARBER.")}`} 
+                href={`https://wa.me/5581998591594?text=${encodeURIComponent("Olá! Preciso de suporte com o sistema Queen Agenda.")}`} 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="hover:text-[#C5A059]"

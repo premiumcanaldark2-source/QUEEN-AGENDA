@@ -136,7 +136,7 @@ app.get("/api/health", async (req, res) => {
   });
 });
 
-// Standard PWA Manifest for KIVO BARBER
+// Standard PWA Manifest for Queen Agenda
 app.get("/manifest.json", async (req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -156,28 +156,16 @@ app.get("/manifest.json", async (req, res) => {
     "categories": ["business", "lifestyle"],
     "icons": [
       {
-        "src": "/logo_kivo_192.png",
+        "src": "/queen_agenda_favicon.png",
         "sizes": "192x192",
         "type": "image/png",
-        "purpose": "any"
+        "purpose": "any maskable"
       },
       {
-        "src": "/logo_kivo_192.png",
-        "sizes": "192x192",
-        "type": "image/png",
-        "purpose": "maskable"
-      },
-      {
-        "src": "/logo_kivo_512.png",
+        "src": "/queen_agenda_favicon.png",
         "sizes": "512x512",
         "type": "image/png",
-        "purpose": "any"
-      },
-      {
-        "src": "/logo_kivo_512.png",
-        "sizes": "512x512",
-        "type": "image/png",
-        "purpose": "maskable"
+        "purpose": "any maskable"
       }
     ],
     "screenshots": [
@@ -474,7 +462,7 @@ app.post("/api/login", async (req, res) => {
 // CLIENT LOGIN & REGISTER
 app.post("/api/clients/register", async (req, res) => {
   try {
-    const { name, phone, password, barbershop_id: raw_barbershop_id, notifications_enabled } = req.body;
+    const { name, phone, password, barbershop_id: raw_barbershop_id } = req.body;
 
     if (!name || !phone || !password || !raw_barbershop_id) {
        return res.status(400).json({ error: "Preencha todos os campos obrigatórios." });
@@ -494,8 +482,7 @@ app.post("/api/clients/register", async (req, res) => {
           name,
           phone: cleanPhone,
           password,
-          barbershop_id,
-          notifications_enabled: notifications_enabled !== undefined ? notifications_enabled : true
+          barbershop_id
         }])
         .select();
 
@@ -1253,7 +1240,7 @@ app.get("/api/barbershops/:id", async (req, res) => {
 
 app.post("/api/barbershops", async (req, res) => {
   try {
-    const { name, address, phone, plan_id, password, status, slug } = req.body;
+    const { name, address, phone, plan_id, password, status } = req.body;
     let logo_url = req.body.logo_url;
     let banner_url = req.body.banner_url;
     let bio = req.body.bio;
@@ -1277,13 +1264,6 @@ app.post("/api/barbershops", async (req, res) => {
       return res.status(400).json({ error: phoneInUseError });
     }
 
-    const finalSlug = slug || (name || 'barber')
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-
     const { data, error } = await supabase.from('barbershops').insert([{ 
       name, 
       address, 
@@ -1296,18 +1276,10 @@ app.post("/api/barbershops", async (req, res) => {
       bio,
       photo1,
       photo2,
-      photo3,
-      slug: finalSlug
+      photo3
     }]).select();
     
-    if (error) {
-      // Fallback se colunas novas faltarem
-      const { data: retryData, error: retryError } = await supabase.from('barbershops').insert([{ 
-        name, address, phone: cleanPhone, plan_id, password, status, logo_url, banner_url, bio, photo1, photo2, photo3
-      }]).select();
-      if (retryError) throw retryError;
-      return res.json(retryData[0]);
-    }
+    if (error) throw error;
     res.json(data[0]);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1317,7 +1289,7 @@ app.post("/api/barbershops", async (req, res) => {
 app.put("/api/barbershops/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, address, phone, plan_id, password, status, whatsapp, reminder_lead_time_minutes, slug } = req.body;
+    const { name, address, phone, plan_id, password, status } = req.body;
     let logo_url = req.body.logo_url;
     let banner_url = req.body.banner_url;
     let bio = req.body.bio;
@@ -1330,17 +1302,12 @@ app.put("/api/barbershops/:id", async (req, res) => {
 
     if (address) {
       const parts = address.split('|||');
-      // Only recover from address if they are null/undefined in body AND not intentionally empty strings (unless we want to allow clearing)
-      // Usually, if the body doesn't even have the key, we recover it.
       if (parts.length > 2 && logo_url === undefined) logo_url = parts[2];
       if (parts.length > 3 && banner_url === undefined) banner_url = parts[3];
       if (parts.length > 4 && bio === undefined) bio = parts[4];
       if (parts.length > 5 && photo1 === undefined) photo1 = parts[5];
       if (parts.length > 6 && photo2 === undefined) photo2 = parts[6];
       if (parts.length > 7 && photo3 === undefined) photo3 = parts[7];
-    } else if (currentShop) {
-      // If address is NOT provided, we should probably keep existing address or reconstruct it?
-      // For now, let's just make sure we don't lose the individual column values.
     }
 
     // Double check with columns in case address string was out of sync
@@ -1362,13 +1329,6 @@ app.put("/api/barbershops/:id", async (req, res) => {
       }
     }
 
-    if (slug && slug !== currentShop?.slug) {
-      const { data: slugCheck } = await supabase.from('barbershops').select('id').eq('slug', slug).neq('id', id).maybeSingle();
-      if (slugCheck) {
-        return res.status(400).json({ error: "Este identificador (slug) já está em uso por outra unidade." });
-      }
-    }
-    
     // Check if transitioning from blocked to active to renew billing cycle / grace period
     const updatePayload: any = { 
       name: name ?? currentShop?.name, 
@@ -1376,15 +1336,12 @@ app.put("/api/barbershops/:id", async (req, res) => {
       phone: cleanPhone ?? currentShop?.phone, 
       plan_id: plan_id ?? currentShop?.plan_id, 
       status: status ?? currentShop?.status,
-      logo_url: logo_url,
-      banner_url: banner_url,
-      bio: bio,
-      photo1: photo1,
-      photo2: photo2,
-      photo3: photo3,
-      whatsapp: whatsapp ?? currentShop?.whatsapp,
-      reminder_lead_time_minutes: reminder_lead_time_minutes ?? currentShop?.reminder_lead_time_minutes,
-      slug: slug ?? currentShop?.slug
+      logo_url,
+      banner_url,
+      bio,
+      photo1,
+      photo2,
+      photo3
     };
 
     if (password) updatePayload.password = password;
@@ -1394,16 +1351,7 @@ app.put("/api/barbershops/:id", async (req, res) => {
     }
 
     const { data, error } = await supabase.from('barbershops').update(updatePayload).eq('id', id).select();
-    if (error) {
-      // Fallback se colunas novas faltarem
-      const safePayload = { ...updatePayload };
-      delete safePayload.slug;
-      delete safePayload.reminder_lead_time_minutes;
-      delete safePayload.whatsapp;
-      const { data: retryData, error: retryError } = await supabase.from('barbershops').update(safePayload).eq('id', id).select();
-      if (retryError) throw retryError;
-      return res.json(retryData[0]);
-    }
+    if (error) throw error;
     res.json(data[0]);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
