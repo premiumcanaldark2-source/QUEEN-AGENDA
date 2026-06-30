@@ -8414,6 +8414,11 @@ export default function App() {
                 </button>
               </div>
               <form onSubmit={handleSaveService} className="space-y-4">
+                {errorStatus && (
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold p-3 rounded-xl text-center">
+                    {errorStatus}
+                  </div>
+                )}
                 <div className="space-y-1">
                   <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} uppercase tracking-widest`}>Nome do Serviço</label>
                   <input 
@@ -8427,7 +8432,7 @@ export default function App() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-black' : 'text-[#a48c7a]'} uppercase tracking-widest`}>Valor (R$)</label>
+                    <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} uppercase tracking-widest`}>Valor (R$)</label>
                     <input 
                       required
                       type="number" 
@@ -8438,7 +8443,7 @@ export default function App() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-black' : 'text-[#a48c7a]'} uppercase tracking-widest`}>Duração (min)</label>
+                    <label className={`text-[10px] font-bold ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} uppercase tracking-widest`}>Duração (min)</label>
                     <input 
                       required
                       type="number" 
