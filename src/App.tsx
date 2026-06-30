@@ -3065,6 +3065,19 @@ export default function App() {
                                 <div>
                                   <h4 className={`font-sans font-black text-sm uppercase tracking-wide dark:group-hover:text-amber-400 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{service.name}</h4>
                                   <p className="text-[10px] opacity-50 font-bold uppercase mt-1">🕒 DURAÇÃO: {service.duration_minutes} MINUTOS</p>
+                                  {(() => {
+                                    const serviceProfs = (service.professional_ids || [])
+                                      .map(id => clientPortalProfessionals.find(p => p.id === id))
+                                      .filter(Boolean);
+                                    
+                                    return (
+                                      <p className="text-[10px] opacity-70 font-bold mt-1 text-[#ffb77d] flex items-center gap-1">
+                                        <span>👤 {serviceProfs.length > 0 
+                                          ? serviceProfs.map(p => p.name).join(', ') 
+                                          : 'Qualquer profissional'}</span>
+                                      </p>
+                                    );
+                                  })()}
                                 </div>
                                 <div className="text-right">
                                   <p className="text-base font-black text-[#ffb77d]">R$ {service.price}</p>
@@ -6496,6 +6509,30 @@ export default function App() {
                         </div>
                       </div>
                       <h4 className="font-bold text-lg">{service.name}</h4>
+                      {(() => {
+                        const serviceProfs = (service.professional_ids || [])
+                          .map(id => professionals.find(p => p.id === id))
+                          .filter(Boolean);
+                        
+                        return (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {serviceProfs.length > 0 ? (
+                              serviceProfs.map((prof, idx) => (
+                                <span 
+                                  key={prof?.id || idx} 
+                                  className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-[#ffb77d]/10 text-[#ffb77d]"
+                                >
+                                  👤 {prof?.name}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-[10px] opacity-40 font-bold uppercase">
+                                👤 Todos os profissionais
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                       <div className="mt-4 flex items-center justify-between">
                         <div>
                           <p className="text-[10px] font-bold uppercase tracking-widest opacity-40">Valor</p>
