@@ -53,6 +53,74 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Plan, Barbershop, Service, Professional, Appointment, SubscriptionPlan, Client } from './types';
 import { FinancialERP } from './components/FinancialERP';
 
+// Helper component for pagination
+const Pagination = ({ currentPage, totalItems, itemsPerPage, onPageChange, theme }: { currentPage: number, totalItems: number, itemsPerPage: number, onPageChange: (page: number) => void, theme: string }) => {
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-center gap-2 p-6 border-t border-white/5 bg-white/[0.01]">
+      <button
+        disabled={currentPage === 1}
+        onClick={() => {
+          onPageChange(currentPage - 1);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
+          theme === 'dark' 
+            ? 'border-white/10 text-[#C5A059] hover:bg-white/5' 
+            : 'border-black/5 text-[#C5A059] hover:bg-black/5'
+        } disabled:opacity-20`}
+      >
+        <ChevronLeft size={14} />
+        Anterior
+      </button>
+      <div className="flex items-center gap-1.5">
+        {[...Array(totalPages)].map((_, i) => {
+          const page = i + 1;
+          // Mostrar apenas algumas páginas se forem muitas
+          if (totalPages > 5 && Math.abs(page - currentPage) > 1 && page !== 1 && page !== totalPages) {
+            if (page === 2 || page === totalPages - 1) return <span key={i} className="px-1 opacity-40">...</span>;
+            return null;
+          }
+          
+          return (
+            <button
+              key={i}
+              onClick={() => {
+                onPageChange(page);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className={`w-10 h-10 rounded-xl text-[10px] font-black transition-all ${
+                currentPage === page
+                  ? 'bg-[#C5A059] text-white shadow-lg shadow-[#C5A059]/20 scale-110'
+                  : theme === 'dark' ? 'text-[#8C7A6A] hover:bg-white/5 border border-white/5' : 'text-[#8C7A6A] hover:bg-black/5 border border-black/5'
+              }`}
+            >
+              {page}
+            </button>
+          );
+        })}
+      </div>
+      <button
+        disabled={currentPage === totalPages}
+        onClick={() => {
+          onPageChange(currentPage + 1);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
+          theme === 'dark' 
+            ? 'border-white/10 text-[#C5A059] hover:bg-white/5' 
+            : 'border-black/5 text-[#C5A059] hover:bg-black/5'
+        } disabled:opacity-20`}
+      >
+        Próximo
+        <ChevronRight size={14} />
+      </button>
+    </div>
+  );
+};
+
 interface AuthUser {
   role: 'master' | 'barber' | 'professional';
   name: string;
@@ -438,6 +506,7 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [barbershops, setBarbershops] = useState<Barbershop[]>([]);
+  const [masterBarbershopPage, setMasterBarbershopPage] = useState(1);
   const [services, setServices] = useState<Service[]>([]);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -581,6 +650,8 @@ export default function App() {
   const [isSavingClient, setIsSavingClient] = useState(false);
   const [isPlanSelectorOpen, setIsPlanSelectorOpen] = useState(false);
   const [clientPlanLoading, setClientPlanLoading] = useState(false);
+
+  const [shopClientPage, setShopClientPage] = useState(1);
 
   // --- ESTADOS DO PAINEL EXTRAS (BLOQUEIOS E LIMITES) ---
   const [lookaheadDays, setLookaheadDays] = useState<string>("15");
@@ -2820,22 +2891,24 @@ export default function App() {
                         </button>
                       </div>
 
-                      <div className="pb-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' });
-                          }}
-                          className={`w-full flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer ${
-                            theme === 'dark' 
-                              ? 'bg-white/5 text-white hover:bg-white/10 border border-white/5' 
-                              : 'bg-white text-black hover:bg-black/10 border border-[#C5A059]/10 shadow-sm'
-                          }`}
-                        >
-                          <Sparkles size={16} className="text-[#C5A059]" />
-                          Conheça Nossas Assinaturas Online
-                        </button>
-                      </div>
+                      {clientPortalSubscriptionPlans.length > 0 && (
+                        <div className="pb-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className={`w-full flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer ${
+                              theme === 'dark' 
+                                ? 'bg-white/5 text-white hover:bg-white/10 border border-white/5' 
+                                : 'bg-white text-black hover:bg-black/10 border border-[#C5A059]/10 shadow-sm'
+                            }`}
+                          >
+                            <Sparkles size={16} className="text-[#C5A059]" />
+                            Conheça Nossas Assinaturas Online
+                          </button>
+                        </div>
+                      )}
 
                     {photos.length > 0 && (
                       <div className="pt-3 border-t border-dashed border-white/5">
@@ -4421,7 +4494,7 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-screen overflow-y-auto">
+      <main className={`flex-1 flex flex-col min-h-screen overflow-y-auto ${theme === 'dark' ? 'bg-white' : 'bg-[#fafafa]'}`}>
         {/* Header */}
         <header className={`h-16 border-b ${theme === 'dark' ? 'border-black/10 bg-white/80' : 'border-black/5 bg-[#ffffff]/80'} flex items-center justify-between px-8 sticky top-0 backdrop-blur-md z-30 transition-colors duration-300`}>
           <h2 className="text-sm md:text-xl font-bold uppercase tracking-tight truncate max-w-[140px] sm:max-w-none text-black">
@@ -4874,7 +4947,7 @@ export default function App() {
                       </tr>
                     </thead>
                     <tbody className="text-sm">
-                      {barbershops.length > 0 ? barbershops.map((shop) => (
+                      {barbershops.length > 0 ? barbershops.slice((masterBarbershopPage - 1) * 10, masterBarbershopPage * 10).map((shop) => (
                         <tr key={shop.id} className={`border-b ${theme === 'dark' ? 'border-white/5 hover:bg-white/5' : 'border-black/5 hover:bg-black/5'} transition-colors`}>
                           <td className="p-4 font-bold">{shop.name}</td>
                           <td className={`p-4 ${theme === 'dark' ? 'text-[#ddc1ae]' : 'text-[#a48c7a]'} max-w-xs truncate`}>{shop.address ? shop.address.split('|||')[0] : ''}</td>
@@ -4966,6 +5039,13 @@ export default function App() {
                     </tbody>
                   </table>
                 </div>
+                <Pagination 
+                  currentPage={masterBarbershopPage}
+                  totalItems={barbershops.length}
+                  itemsPerPage={10}
+                  onPageChange={setMasterBarbershopPage}
+                  theme={theme}
+                />
               </motion.div>
             )}
 
@@ -7268,6 +7348,7 @@ export default function App() {
                               const search = searchClientQuery.toLowerCase();
                               return c.name?.toLowerCase().includes(search) || c.phone?.includes(search);
                             })
+                            .slice((shopClientPage - 1) * 10, shopClientPage * 10)
                             .map(c => {
                               // Contar agendamentos relativos ao telefone dele, considerando o filtro de data
                               let clientAppts = appointments.filter(a => a.customer_phone?.replace(/\D/g, '') === c.phone?.replace(/\D/g, ''));
@@ -7436,6 +7517,16 @@ export default function App() {
                       </tbody>
                     </table>
                   </div>
+                  <Pagination 
+                    currentPage={shopClientPage}
+                    totalItems={clients.filter(c => {
+                      const search = searchClientQuery.toLowerCase();
+                      return c.name?.toLowerCase().includes(search) || c.phone?.includes(search);
+                    }).length}
+                    itemsPerPage={10}
+                    onPageChange={setShopClientPage}
+                    theme={theme}
+                  />
                 </div>
               </motion.div>
             )}
