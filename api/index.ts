@@ -1264,7 +1264,7 @@ app.post("/api/barbershops", async (req, res) => {
       return res.status(400).json({ error: phoneInUseError });
     }
 
-    const { data, error } = await supabase.from('barbershops').insert([{ 
+    const insertPayload: any = { 
       name, 
       display_name,
       address, 
@@ -1278,9 +1278,20 @@ app.post("/api/barbershops", async (req, res) => {
       photo1,
       photo2,
       photo3
-    }]).select();
+    };
+
+    const { data, error } = await supabase.from('barbershops').insert([insertPayload]).select();
     
-    if (error) throw error;
+    if (error) {
+      if (error.message && (error.message.includes("display_name") || error.code === "PGRST202")) {
+        console.warn("Aviso: coluna 'display_name' não existe na tabela 'barbershops'. Tentando inserir sem ela.");
+        delete insertPayload.display_name;
+        const { data: fallbackData, error: fallbackError } = await supabase.from('barbershops').insert([insertPayload]).select();
+        if (fallbackError) throw fallbackError;
+        return res.json(fallbackData[0]);
+      }
+      throw error;
+    }
     res.json(data[0]);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1353,7 +1364,16 @@ app.put("/api/barbershops/:id", async (req, res) => {
     }
 
     const { data, error } = await supabase.from('barbershops').update(updatePayload).eq('id', id).select();
-    if (error) throw error;
+    if (error) {
+      if (error.message && (error.message.includes("display_name") || error.code === "PGRST202")) {
+        console.warn("Aviso: coluna 'display_name' não existe na tabela 'barbershops'. Tentando atualizar sem ela.");
+        delete updatePayload.display_name;
+        const { data: fallbackData, error: fallbackError } = await supabase.from('barbershops').update(updatePayload).eq('id', id).select();
+        if (fallbackError) throw fallbackError;
+        return res.json(fallbackData[0]);
+      }
+      throw error;
+    }
     res.json(data[0]);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1411,7 +1431,15 @@ app.post("/api/services", async (req, res) => {
   try {
     const { barbershop_id, name, price, duration_minutes, professional_ids } = req.body;
     const { data, error } = await supabase.from('services').insert([{ barbershop_id, name, price, duration_minutes, professional_ids }]).select();
-    if (error) throw error;
+    if (error) {
+      if (error.message && (error.message.includes("professional_ids") || error.code === "PGRST202")) {
+        console.warn("Aviso: coluna 'professional_ids' não existe na tabela 'services'. Tentando inserir sem ela.");
+        const { data: fallbackData, error: fallbackError } = await supabase.from('services').insert([{ barbershop_id, name, price, duration_minutes }]).select();
+        if (fallbackError) throw fallbackError;
+        return res.json(fallbackData[0]);
+      }
+      throw error;
+    }
     res.json(data[0]);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1423,7 +1451,15 @@ app.put("/api/services/:id", async (req, res) => {
     const { id } = req.params;
     const { name, price, duration_minutes, professional_ids } = req.body;
     const { data, error } = await supabase.from('services').update({ name, price, duration_minutes, professional_ids }).eq('id', id).select();
-    if (error) throw error;
+    if (error) {
+      if (error.message && (error.message.includes("professional_ids") || error.code === "PGRST202")) {
+        console.warn("Aviso: coluna 'professional_ids' não existe na tabela 'services'. Tentando atualizar sem ela.");
+        const { data: fallbackData, error: fallbackError } = await supabase.from('services').update({ name, price, duration_minutes }).eq('id', id).select();
+        if (fallbackError) throw fallbackError;
+        return res.json(fallbackData[0]);
+      }
+      throw error;
+    }
     res.json(data[0]);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
