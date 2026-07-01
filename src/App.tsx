@@ -7714,11 +7714,11 @@ export default function App() {
 
                   {/* Esquerda: Quadros de Bloqueio Separados */}
                   <div className="lg:col-span-6 space-y-6">
-                    {/* Quadro 1: Bloquear Barbearia Completa */}
-                    <div className={`p-6 rounded-2xl border ${theme === 'dark' ? 'bg-[#1c1b1b] border-white/5' : 'bg-white border-black/5'} shadow-sm space-y-4`}>
+                    {/* Quadro 1: Bloquear Espaço de Beleza Completo */}
+                    <div className={`p-6 rounded-2xl border ${theme === 'dark' ? 'bg-[#1c1b1b]' : 'bg-white'} ${theme === 'dark' ? 'border-white/5' : 'border-black/5'} shadow-sm space-y-4`}>
                       <div className="flex items-center gap-2 text-[#ffb77d]">
                         <Store size={18} />
-                        <h4 className="font-bold text-sm uppercase tracking-wide">Bloquear Barbearia Inteira (Geral/Recesso)</h4>
+                        <h4 className="font-bold text-sm uppercase tracking-wide">Bloquear Espaço de Beleza (Geral/Recesso)</h4>
                       </div>
                       <p className="text-[11px] opacity-40 text-neutral-400">
                         Crie folgas gerais ou períodos de recesso de um ou múltiplos dias. Nenhum cliente conseguirá marcar agendamento online de nenhum serviço nesse período escolhido.
@@ -7788,11 +7788,11 @@ export default function App() {
                       </form>
                     </div>
 
-                    {/* Quadro 2: Bloquear Barbeiro Específico */}
-                    <div className={`p-6 rounded-2xl border ${theme === 'dark' ? 'bg-[#1c1b1b] border-white/5' : 'bg-white border-black/5'} shadow-sm space-y-4`}>
+                    {/* Quadro 2: Bloquear Profissional Específico */}
+                    <div className={`p-6 rounded-2xl border ${theme === 'dark' ? 'bg-[#1c1b1b]' : 'bg-white'} ${theme === 'dark' ? 'border-white/5' : 'border-black/5'} shadow-sm space-y-4`}>
                       <div className="flex items-center gap-2 text-rose-400">
                         <UserCircle size={18} />
-                        <h4 className="font-bold text-sm uppercase tracking-wide">Bloquear Barbeiro (Folga/Férias/Horário)</h4>
+                        <h4 className="font-bold text-sm uppercase tracking-wide">Bloquear Profissional (Folga/Férias/Horário)</h4>
                       </div>
                       <p className="text-[11px] opacity-40 text-neutral-400">
                         Crie bloqueios específicos para um colaborador. Defina férias de dias inteiros ou bloqueie apenas algumas horas de um dia específico.
@@ -7844,9 +7844,9 @@ export default function App() {
                             value={barberBlockProfId || (professionals[0]?.id || '')}
                             onChange={(e) => setBarberBlockProfId(e.target.value)}
                             required
-                            className={`w-full ${theme === 'dark' ? 'bg-[#121212]' : 'bg-[#f5f5f5]'} border ${theme === 'dark' ? 'border-white/5' : 'border-black/5'} rounded-xl p-3 focus:outline-none focus:border-[#ffb77d] text-xs font-bold transition-all text-white`}
+                            className="w-full bg-white text-black border border-black/10 rounded-xl p-3 focus:outline-none focus:border-[#ffb77d] text-xs font-bold transition-all"
                           >
-                            <option value="" disabled>Escolha o profissional...</option>
+                            <option value="" disabled className="text-black bg-white">Escolha o profissional...</option>
                             {professionals.map(p => (
                               <option key={p.id} value={p.id} className="text-black bg-white">{p.name}</option>
                             ))}
