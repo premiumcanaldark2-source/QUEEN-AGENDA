@@ -7921,7 +7921,7 @@ export default function App() {
                                 <select
                                   value={barberBlockTimeStart}
                                   onChange={(e) => setBarberBlockTimeStart(e.target.value)}
-                                  className={`w-full ${theme === 'dark' ? 'bg-[#121212]' : 'bg-[#f5f5f5]'} border ${theme === 'dark' ? 'border-white/5' : 'border-black/5'} rounded-xl p-3 focus:outline-none focus:border-[#ffb77d] text-xs font-bold transition-all text-white`}
+                                  className={`w-full ${theme === 'dark' ? 'bg-[#121212] text-white border-white/5' : 'bg-white text-black border-black/10'} border rounded-xl p-3 focus:outline-none focus:border-[#ffb77d] text-xs font-bold transition-all`}
                                 >
                                   {COMMON_TIME_SLOTS.map(t => (
                                     <option key={t} value={t} className="text-black bg-white">{t}h</option>
@@ -7933,7 +7933,7 @@ export default function App() {
                                 <select
                                   value={barberBlockTimeEnd}
                                   onChange={(e) => setBarberBlockTimeEnd(e.target.value)}
-                                  className={`w-full ${theme === 'dark' ? 'bg-[#121212]' : 'bg-[#f5f5f5]'} border ${theme === 'dark' ? 'border-white/5' : 'border-black/5'} rounded-xl p-3 focus:outline-none focus:border-[#ffb77d] text-xs font-bold transition-all text-white`}
+                                  className={`w-full ${theme === 'dark' ? 'bg-[#121212] text-white border-white/5' : 'bg-white text-black border-black/10'} border rounded-xl p-3 focus:outline-none focus:border-[#ffb77d] text-xs font-bold transition-all`}
                                 >
                                   {COMMON_TIME_SLOTS.concat(["23:59"]).map(t => (
                                     <option key={t} value={t} className="text-black bg-white">{t}h</option>
@@ -7971,15 +7971,19 @@ export default function App() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Calendar size={18} className="text-[#C5A059]" />
-                        <h4 className="font-bold text-sm uppercase tracking-wide">Bloqueios Ativos da Agenda</h4>
+                        <h4 className={`font-bold text-sm uppercase tracking-wide ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Bloqueios Ativos da Agenda</h4>
                       </div>
-                      <span className="text-[10px] px-2.5 py-1 bg-white/5 border border-white/10 rounded-lg font-mono font-bold text-[#C5A059]">
+                      <span className={`text-[10px] px-2.5 py-1 rounded-lg font-mono font-bold ${
+                        theme === 'dark'
+                          ? 'bg-white/5 border border-white/10 text-[#C5A059]'
+                          : 'bg-black/5 border border-black/10 text-[#a48c7a]'
+                      }`}>
                         {extrasBlocks.length} Ativo(s)
                       </span>
                     </div>
 
-                    <div className="overflow-hidden border border-white/5 rounded-xl">
-                      <div className="max-h-[850px] overflow-y-auto divide-y divide-white/5">
+                    <div className={`overflow-hidden border ${theme === 'dark' ? 'border-white/5' : 'border-black/5'} rounded-xl`}>
+                      <div className={`max-h-[850px] overflow-y-auto divide-y ${theme === 'dark' ? 'divide-white/5' : 'divide-black/5'}`}>
                         {extrasBlocks && extrasBlocks.length > 0 ? (
                           extrasBlocks.map((block) => {
                             const targetProf = block.type === 'barber'
@@ -8002,11 +8006,11 @@ export default function App() {
                                     )}
                                   </div>
                                   
-                                  <p className="text-sm font-bold text-slate-200">
+                                  <p className={`text-sm font-bold ${theme === 'dark' ? 'text-slate-200' : 'text-slate-900'}`}>
                                     {block.type === 'shop' ? 'Unidade Inteira Travada' : (targetProf?.name || 'Profissional específico')}
                                   </p>
 
-                                  <div className="flex items-center gap-3 text-[10px] text-neutral-400 font-mono">
+                                  <div className={`flex items-center gap-3 text-[10px] font-mono ${theme === 'dark' ? 'text-neutral-400' : 'text-neutral-600'}`}>
                                     <span>Dia: {block.date.split('-').reverse().join('/')}</span>
                                     <span>•</span>
                                     <span>
